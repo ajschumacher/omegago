@@ -1,6 +1,21 @@
 import random
 
 
+def random_dist(l):
+    # based on http://stackoverflow.com/questions/4265988/generate-random-numbers-with-a-given-numerical-distribution
+    total = float(max(sum(value for item, value in l), 1))  # at least one
+    r = random.uniform(0, 1)
+    s = 0
+    for item, value in l:
+        try:
+            s += value / total
+        except ZeroDivisionError:
+            print l, item, value, total
+        if s >= r:
+            return item
+    return item  # Might occur because of floating point inaccuracies
+
+
 def bounds(positions):
     row_min = min(position[0] for position in positions)
     row_max = max(position[0] for position in positions)
@@ -165,35 +180,39 @@ def even_full_mover(choices, player, opponent, blank):
 
 
 def fixed_full_mover(choices, player, opponent, blank):
-    choices = list(choices) * 10
+    choices = {choice: 10 for choice in choices}
     for _ in range(1000):
-        choice = random.choice(choices)
+        choice = random_dist(choices.items())
         black, white, new_blank = play(choice, player, opponent, blank)
         result = game(black, white, new_blank,
                       random_mover, random_mover,
                       player, opponent, blank)
-        if result == 'black':
-            choices.append(choice)
-    print len(choices)
-    c = Counter(choices)
-    print c
-    return c.most_common(1)[0][0]
+        choices[choice] += result
+        least = min(value for value in choices.values())
+        if least < 1:
+            for item in choices.keys():
+                choices[item] += abs(least) + 1
+    print sum(value for item, value in choices.iteritems())
+    print choices
+    return max((value, item) for item, value in choices.iteritems())[1]
 
 
 def fixed_trunc_mover(choices, player, opponent, blank):
-    choices = list(choices) * 10
+    choices = {choice: 10 for choice in choices}
     for _ in range(1000):
-        choice = random.choice(choices)
+        choice = random_dist(choices.items())
         black, white, new_blank = play(choice, player, opponent, blank)
         result = game(black, white, new_blank,
                       random_mover, random_mover,
                       player, opponent, blank, max_steps=4)
-        if result == 'black':
-            choices.append(choice)
-    print len(choices)
-    c = Counter(choices)
-    print c
-    return c.most_common(1)[0][0]
+        choices[choice] += result
+        least = min(value for value in choices.values())
+        if least < 1:
+            for item in choices.keys():
+                choices[item] += abs(least)
+    print sum(value for item, value in choices.iteritems())
+    print choices
+    return max((value, item) for item, value in choices.iteritems())[1]
 
 
 def even_trunc_mover(choices, player, opponent, blank):
@@ -268,11 +287,11 @@ from collections import Counter
 #          ' O   O * ',
 #          '   O *   ')
 # black, white, blank = lines_to_state(lines)
-black, white, blank = rectangular_start_state((1, 2))
+black, white, blank = rectangular_start_state((4, 4))
 # black, white = frozenset(), frozenset()
 # blank = frozenset([(1, 1), (2, 1), (1, 2), (4, 4), (4, 5), (4, 6), (5, 4), (5, 5), (5, 6), (6, 4), (6, 5), (6, 6)])
 print Counter(game(black, white, blank,
-                   fixed_trunc_mover, human_mover,
+                   fixed_full_mover, human_mover,
                    show=True)
               for _ in range(1))
 
