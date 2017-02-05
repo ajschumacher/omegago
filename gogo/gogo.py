@@ -163,6 +163,19 @@ def random_mover(choices, player, opponent, blank):
     return random.choice(choices)
 
 
+def biased_random_mover(choices, player, opponent, blank):
+    choices = {choice: 0 for choice in choices}
+    for choice in choices.keys():
+        black, white, new_blank = play(choice, player, opponent, blank)
+        outcome = len(black) - len(white)  # pretending we're black
+        choices[choice] = outcome
+    smallest = min(value for value in choices.values())
+    choices = {choice: (value - smallest + 1) * len(blank)
+               for choice, value in choices.items()}
+    choice = random_dist(choices.items())
+    return choice
+
+
 def even_full_mover(choices, player, opponent, blank):
     results = []
     for choice in choices:
@@ -181,11 +194,11 @@ def even_full_mover(choices, player, opponent, blank):
 
 def fixed_full_mover(choices, player, opponent, blank):
     choices = {choice: 10 for choice in choices}
-    for _ in range(1000):
+    for _ in range(400):
         choice = random_dist(choices.items())
         black, white, new_blank = play(choice, player, opponent, blank)
         result = game(black, white, new_blank,
-                      random_mover, random_mover,
+                      biased_random_mover, biased_random_mover,
                       player, opponent, blank)
         choices[choice] += result
         least = min(value for value in choices.values())
@@ -199,11 +212,11 @@ def fixed_full_mover(choices, player, opponent, blank):
 
 def fixed_trunc_mover(choices, player, opponent, blank):
     choices = {choice: 10 for choice in choices}
-    for _ in range(1000):
+    for _ in range(400):
         choice = random_dist(choices.items())
         black, white, new_blank = play(choice, player, opponent, blank)
         result = game(black, white, new_blank,
-                      random_mover, random_mover,
+                      biased_random_mover, biased_random_mover,
                       player, opponent, blank, max_steps=4)
         choices[choice] += result
         least = min(value for value in choices.values())
@@ -290,10 +303,13 @@ from collections import Counter
 black, white, blank = rectangular_start_state((4, 4))
 # black, white = frozenset(), frozenset()
 # blank = frozenset([(1, 1), (2, 1), (1, 2), (4, 4), (4, 5), (4, 6), (5, 4), (5, 5), (5, 6), (6, 4), (6, 5), (6, 6)])
-print Counter(game(black, white, blank,
-                   fixed_full_mover, human_mover,
-                   show=True)
-              for _ in range(1))
+results = [game(black, white, blank,
+                random_mover, biased_random_mover,
+                show=False)
+           for _ in range(1000)]
+print Counter(results)
+wins = ['black' if result > 0 else 'white' for result in results]
+print Counter(wins)
 
 # while True:
 #     print state_to_str(black, white, blank)
