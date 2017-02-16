@@ -23,12 +23,6 @@ def human_mover(choices, player, opponent, blank):
             return position
 
 
-def thompson(data):
-    draws = [(random.betavariate(values[0], values[1]), choice)
-             for choice, values in data.items()]
-    return max(draws)[1]
-
-
 def random_dist(l):
     # based on http://stackoverflow.com/questions/4265988/generate-random-numbers-with-a-given-numerical-distribution
     total = float(max(sum(value for item, value in l), 1))  # at least one
@@ -123,6 +117,12 @@ def even_trunc_mover(choices, player, opponent, blank):
         results.append((value, choice))
     print sorted(results)
     return max(results)[1]
+
+
+def thompson(data):
+    draws = [(random.betavariate(values[0], values[1]), choice)
+             for choice, values in data.items()]
+    return max(draws)[1]
 
 
 def monte_carlo_tree_mover(choices, player, opponent, blank, tree=None):
