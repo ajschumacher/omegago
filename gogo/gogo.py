@@ -1,5 +1,4 @@
 import random
-from pprint import pprint as pp
 
 
 def thompson(data):
