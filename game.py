@@ -48,21 +48,10 @@ def game(black, white, blank,
         if show:
             print state_to_str(black, white, blank,
                                played=position, number=True)
-# lines = ('       ',
-#          '       ',
-#          '       ')
-# lines = ('     ',
-#          '     ')
-# lines = ('   O *   ',
-#          ' O   O * ',
-#          '   O *   ')
-# black, white, blank = lines_to_state(lines)
 
 
 def main():
     black, white, blank = rectangular_start_state((5, 5))
-    # black, white = frozenset(), frozenset()
-    # blank = frozenset([(1, 1), (2, 1), (1, 2), (4, 4), (4, 5), (4, 6), (5, 4), (5, 5), (5, 6), (6, 4), (6, 5), (6, 6)])
     results = [game(black, white, blank,
                     monte_carlo_tree_mover, human_mover,
                     show=True)

@@ -1,3 +1,18 @@
+# A game state is three sets of (i, j) coordinates:
+# black positions, white positions, and empty positions.
+# This allows playing on boards like this, if you want:
+
+#     1 2 3 4 5 6
+#   1     X X X X
+#   2   X X     X
+#   3 X X X X X X
+#   4 X   X
+#   5 X   X
+#   6 X X X
+
+# But mostly, people play on square boards.
+
+
 def rectangular_start_state(shape):
     black, white = frozenset(), frozenset()
     blank = frozenset((i, j) for i in range(shape[0]) for j in range(shape[1]))
@@ -42,6 +57,13 @@ def state_to_str(black, white, blank, played=(None, None), number=False):
 def str_to_state(chars):
     lines = chars.rstrip('\n').split('\n')
     return lines_to_state(lines)
+
+
+# You can do things like this:
+# lines = ('   O *   ',
+#          ' O   O * ',
+#          '   O *   ')
+# black, white, blank = lines_to_state(lines)
 
 
 def lines_to_state(lines):
