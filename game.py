@@ -1,9 +1,8 @@
 import time
 import random
 
-from pprint import pprint as pp
-
 from rules import *
+from players import *
 
 
 def thompson(data):
@@ -191,16 +190,17 @@ def monte_carlo_tree_mover(choices, player, opponent, blank, tree=None):
     if tree is None:
         tree = {}
         now, i = time.time(), 0
-        while time.time() < now + 6:
+        # To simulate for a fixed about of time:
+        while time.time() < now + 6:  # seconds
             monte_carlo_tree_mover(choices, player, opponent, blank, tree)
             i += 1
+        # To do a fixed number of simulations:
         # for _ in range(10):
         #     monte_carlo_tree_mover(choices, player, opponent, blank, tree)
-        pp(tree)
+        for choice, values in tree.items():
+            print choice, values[0], values[1], values[0] / float(
+                values[0] + values[1])
         print 'on', i, 'runs'
-        # for choice, values in tree.items():
-        #     print choice, values[0], values[1], values[0] / float(
-        #         values[0] + values[1])
         rates = [(values[0] / float(values[0] + values[1]), choice)
                  for choice, values in tree.items()]
         return max(rates)[1]
