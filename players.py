@@ -137,9 +137,11 @@ def monte_carlo_tree_mover(choices, player, opponent, blank, tree=None):
         # To do a fixed number of simulations:
         # for _ in range(10):
         #     monte_carlo_tree_mover(choices, player, opponent, blank, tree)
-        for choice, values in tree.items():
-            print choice, values[0], values[1], values[0] / float(
-                values[0] + values[1])
+        info = [(choice, values[0], values[1], values[0] / float(
+                values[0] + values[1])) for choice, values in tree.items()]
+        info.sort(key=lambda x: x[3])
+        for line in info:
+            print line
         print 'on', i, 'runs'
         rates = [(values[0] / float(values[0] + values[1]), choice)
                  for choice, values in tree.items()]
