@@ -1,4 +1,11 @@
 import random
+from pprint import pprint as pp
+
+
+def thompson(data):
+    draws = [(random.betavariate(values[0], values[1]), choice)
+             for choice, values in data.items()]
+    return max(draws)[1]
 
 
 def random_dist(l):
@@ -244,6 +251,45 @@ def even_trunc_mover(choices, player, opponent, blank):
     return max(results)[1]
 
 
+def monte_carlo_tree_mover(choices, player, opponent, blank, tree=None):
+    # tree is like {choice: [wins, losses, tree]}
+    if tree is None:
+        tree = {}
+        for _ in range(100):
+            monte_carlo_tree_mover(choices, player, opponent, blank, tree)
+        # for choice, values in tree.items():
+        #     print choice, values[0], values[1]
+        wins = [(values[0], choice) for choice, values in tree.items()]
+        return max(wins)[1]
+    else:
+        if len(choices) == 0:  # game over
+            return False  # loss
+        if len(tree) < len(choices):  # Never tried some moves.
+            choice = [choice for choice in choices if choice not in tree][0]
+            black, white, new_blank = play(choice, player, opponent, blank)
+            result = game(black, white, new_blank,
+                          random_mover, random_mover,
+                          player, opponent, blank)
+            win = result > 0  # black win
+            if win:
+                tree[choice] = [2, 1, {}]
+            else:
+                tree[choice] = [1, 1, {}]
+        else:
+            choice = thompson(tree)
+            black, white, new_blank = play(choice, player, opponent, blank)
+            new_choices = allowed(black, white, new_blank,
+                                  player, opponent, blank)
+            win = monte_carlo_tree_mover(new_choices,
+                                         black, white, new_blank,
+                                         tree=tree[choice][2])
+            if win:
+                tree[choice][0] += 1
+            else:
+                tree[choice][1] += 1
+        return win
+
+
 def game(black, white, blank,
          black_mover, white_mover,
          last_black=None, last_white=None, last_blank=None,
@@ -300,13 +346,13 @@ from collections import Counter
 #          ' O   O * ',
 #          '   O *   ')
 # black, white, blank = lines_to_state(lines)
-black, white, blank = rectangular_start_state((4, 4))
+black, white, blank = rectangular_start_state((3, 3))
 # black, white = frozenset(), frozenset()
 # blank = frozenset([(1, 1), (2, 1), (1, 2), (4, 4), (4, 5), (4, 6), (5, 4), (5, 5), (5, 6), (6, 4), (6, 5), (6, 6)])
 results = [game(black, white, blank,
-                random_mover, biased_random_mover,
+                monte_carlo_tree_mover, random_mover,
                 show=False)
-           for _ in range(1000)]
+           for _ in range(10)]
 print Counter(results)
 wins = ['black' if result > 0 else 'white' for result in results]
 print Counter(wins)
