@@ -82,9 +82,12 @@ def rectangular_start_state(shape):
     return black, white, blank
 
 
-def adjacents(position):
+def adjacent_to(position):
     i, j = position
-    return ((i, j+1), (i, j-1), (i+1, j), (i-1, j))
+    adjacent_positions = ((i-1, j),
+                          (i, j-1), (i, j+1),
+                          (i+1, j))
+    return adjacent_positions
 
 
 def contiguous(position, played, result=None):
@@ -92,7 +95,7 @@ def contiguous(position, played, result=None):
         result = []
     if position in played:
         result.append(position)
-        for adjacent in adjacents(position):
+        for adjacent in adjacent_to(position):
             if adjacent not in result:
                 contiguous(adjacent, played, result)
     return frozenset(result)
@@ -100,7 +103,7 @@ def contiguous(position, played, result=None):
 
 def has_freedom(positions, blank):
     for position in positions:
-        for adjacent in adjacents(position):
+        for adjacent in adjacent_to(position):
             if adjacent in blank:
                 return True
     return False
@@ -116,7 +119,7 @@ def play(position, player, opponent, blank):
         raise Exception('{} is not in {}'.format(position, blank))
     player = player.union(frozenset([position]))
     blank = blank.difference(frozenset([position]))
-    for adjacent in adjacents(position):
+    for adjacent in adjacent_to(position):
         group = contiguous(adjacent, opponent)
         if not has_freedom(group, blank):
             opponent = opponent.difference(group)
