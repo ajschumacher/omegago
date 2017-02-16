@@ -1,4 +1,7 @@
+import time
 import random
+
+from pprint import pprint as pp
 
 from rules import *
 
@@ -187,11 +190,17 @@ def monte_carlo_tree_mover(choices, player, opponent, blank, tree=None):
     # tree is like {choice: [wins, losses, tree]}
     if tree is None:
         tree = {}
-        for _ in range(400):
+        now, i = time.time(), 0
+        while time.time() < now + 6:
             monte_carlo_tree_mover(choices, player, opponent, blank, tree)
-        for choice, values in tree.items():
-            print choice, values[0], values[1], values[0] / float(
-                values[0] + values[1])
+            i += 1
+        # for _ in range(10):
+        #     monte_carlo_tree_mover(choices, player, opponent, blank, tree)
+        pp(tree)
+        print 'on', i, 'runs'
+        # for choice, values in tree.items():
+        #     print choice, values[0], values[1], values[0] / float(
+        #         values[0] + values[1])
         rates = [(values[0] / float(values[0] + values[1]), choice)
                  for choice, values in tree.items()]
         return max(rates)[1]
@@ -282,7 +291,7 @@ from collections import Counter
 #          ' O   O * ',
 #          '   O *   ')
 # black, white, blank = lines_to_state(lines)
-black, white, blank = rectangular_start_state((4, 4))
+black, white, blank = rectangular_start_state((5, 5))
 # black, white = frozenset(), frozenset()
 # blank = frozenset([(1, 1), (2, 1), (1, 2), (4, 4), (4, 5), (4, 6), (5, 4), (5, 5), (5, 6), (6, 4), (6, 5), (6, 6)])
 results = [game(black, white, blank,
