@@ -1,5 +1,7 @@
 import random
 
+from rules import *
+
 
 def thompson(data):
     draws = [(random.betavariate(values[0], values[1]), choice)
@@ -82,81 +84,9 @@ def rectangular_start_state(shape):
     return black, white, blank
 
 
-def adjacent_to(position):
-    i, j = position
-    adjacent_positions = ((i-1, j),
-                          (i, j-1), (i, j+1),
-                          (i+1, j))
-    return adjacent_positions
-
-
-def contiguous(position, played, result=None):
-    if result is None:
-        result = []
-    if position in played:
-        result.append(position)
-        for adjacent in adjacent_to(position):
-            if adjacent not in result:
-                contiguous(adjacent, played, result)
-    return frozenset(result)
-
-
-def has_freedom(positions, blank):
-    for position in positions:
-        for adjacent in adjacent_to(position):
-            if adjacent in blank:
-                return True
-    return False
-
-
 def get_move():
     row, col = raw_input('row (space) col: ').split(' ')
     return int(row), int(col)
-
-
-def play(position, player, opponent, blank):
-    if position not in blank:
-        raise Exception('{} is not in {}'.format(position, blank))
-    player = player.union(frozenset([position]))
-    blank = blank.difference(frozenset([position]))
-    for adjacent in adjacent_to(position):
-        group = contiguous(adjacent, opponent)
-        if not has_freedom(group, blank):
-            opponent = opponent.difference(group)
-            blank = blank.union(group)
-    group = contiguous(position, player)
-    if not has_freedom(group, blank):
-        player = player.difference(group)
-        blank = blank.union(group)
-    return player, opponent, blank
-
-
-def suicide(position, player, opponent, blank):
-    player, opponent, blank = play(position, player, opponent, blank)
-    if position not in player:
-        return True
-    return False
-
-
-def ko(position,
-       player, opponent, blank,
-       last_player, last_opponent, last_blank):
-    player, opponent, blank = play(position, player, opponent, blank)
-    same_player = player == last_player
-    same_opponent = opponent == last_opponent
-    same_blank = blank == last_blank
-    if same_player and same_opponent and same_blank:
-        return True
-    return False
-
-
-def allowed(player, opponent, blank,
-            last_player, last_opponent, last_blank):
-    return tuple(position for position in blank
-                 if not suicide(position, player, opponent, blank)
-                 and not ko(position,
-                            player, opponent, blank,
-                            last_player, last_opponent,  last_blank))
 
 
 def human_mover(choices, player, opponent, blank):
@@ -257,39 +187,43 @@ def monte_carlo_tree_mover(choices, player, opponent, blank, tree=None):
     # tree is like {choice: [wins, losses, tree]}
     if tree is None:
         tree = {}
-        for _ in range(100):
+        for _ in range(400):
             monte_carlo_tree_mover(choices, player, opponent, blank, tree)
-        # for choice, values in tree.items():
-        #     print choice, values[0], values[1]
-        wins = [(values[0], choice) for choice, values in tree.items()]
-        return max(wins)[1]
+        for choice, values in tree.items():
+            print choice, values[0], values[1], values[0] / float(
+                values[0] + values[1])
+        rates = [(values[0] / float(values[0] + values[1]), choice)
+                 for choice, values in tree.items()]
+        return max(rates)[1]
     else:
         if len(choices) == 0:  # game over
-            return False  # loss
+            return True  # our loss is win of caller
         if len(tree) < len(choices):  # Never tried some moves.
             choice = [choice for choice in choices if choice not in tree][0]
-            black, white, new_blank = play(choice, player, opponent, blank)
-            result = game(black, white, new_blank,
+            new_player, new_opponent, new_blank = play(
+                choice, player, opponent, blank)
+            result = game(new_opponent, new_player, new_blank,
                           random_mover, random_mover,
-                          player, opponent, blank)
-            win = result > 0  # black win
+                          opponent, player, blank)
+            win = not result > 0  # opponent loses
             if win:
                 tree[choice] = [2, 1, {}]
             else:
-                tree[choice] = [1, 1, {}]
+                tree[choice] = [1, 2, {}]
         else:
             choice = thompson(tree)
-            black, white, new_blank = play(choice, player, opponent, blank)
-            new_choices = allowed(black, white, new_blank,
-                                  player, opponent, blank)
+            new_player, new_opponent, new_blank = play(
+                choice, player, opponent, blank)
+            new_choices = allowed(new_opponent, new_player, new_blank,
+                                  opponent, player, blank)
             win = monte_carlo_tree_mover(new_choices,
-                                         black, white, new_blank,
+                                         new_opponent, new_player, new_blank,
                                          tree=tree[choice][2])
             if win:
                 tree[choice][0] += 1
             else:
                 tree[choice][1] += 1
-        return win
+        return not win
 
 
 def game(black, white, blank,
@@ -348,13 +282,13 @@ from collections import Counter
 #          ' O   O * ',
 #          '   O *   ')
 # black, white, blank = lines_to_state(lines)
-black, white, blank = rectangular_start_state((3, 3))
+black, white, blank = rectangular_start_state((4, 4))
 # black, white = frozenset(), frozenset()
 # blank = frozenset([(1, 1), (2, 1), (1, 2), (4, 4), (4, 5), (4, 6), (5, 4), (5, 5), (5, 6), (6, 4), (6, 5), (6, 6)])
 results = [game(black, white, blank,
-                monte_carlo_tree_mover, random_mover,
-                show=False)
-           for _ in range(10)]
+                monte_carlo_tree_mover, human_mover,
+                show=True)
+           for _ in range(1)]
 print Counter(results)
 wins = ['black' if result > 0 else 'white' for result in results]
 print Counter(wins)
